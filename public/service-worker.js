@@ -3,12 +3,13 @@
 
 console.log("Hello from your service worker!");
 const FILES_TO_CACHE = [
-    '/',
+    // '/',
     '/index.html',
     '/style.css',
     '/index.js',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
+    '/data.js',
 ];
 
 const CACHE_NAME = 'static-cache-v1';
@@ -83,7 +84,7 @@ self.addEventListener('fetch', async function (event) {
 
 async function offlineDB(record) {
     let db;
-    const request = indexDB.open("budget", 1);
+    const request = indexedDB.open("budget", 1);
     request.onupgradeneeded = function (event) {
         const db = event.target.result;
         db.createObjectStore("pending", {
@@ -91,60 +92,62 @@ async function offlineDB(record) {
 
         });
     };
-}
 
-request.onsuccess = function (event) {
-    db = event.target.result;
 
-    if (navigator.online) {
-        checkDatabase();
+    request.onsuccess = function (event) {
+        db = event.target.result;
 
-    } else {
-        if (record != "GET") {
-            saveRecord(record);
+        if (navigator.online) {
+            checkDatabase();
+
+        } else {
+            if (record != "GET") {
+                saveRecord(record);
+            }
+        }
+    };
+
+    request.onerror = function (event) {
+        console.log("sorry error " + event.target.errorCode);
+    };
+
+    function saveRecord(record) {
+        const transaction = db.transaction(["pending"], "readwrite");
+        const store = transaction.objectStore("pending");
+        store.add(record);
+    }
+
+    function checkDatabase() {
+        const transaction = db.transaction(["pending"], "readwrite");
+        const store = transaction.objectStore("pending");
+        const getAll = store.getAll();
+
+        getAll.onsuccess = function () {
+            if (getAll.result.length > 0) {
+                fetch("/api/transaction/bulk", {
+                    method: "POST",
+                    body: JSON.stringify(getAll.result),
+                    headers: {
+                        Accept: "application/json, text/plain, */*",
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(() => {
+                        ///success pending db 
+                        const transaction = db.transaction(["pending"], "readwrite");
+                        ///pending obj store
+                        const store = transaction.objectStore("pending");
+                        /// clear
+                        store.clear();
+
+                    });
+            }
         }
     }
-};
-
-request.onerror = function (event) {
-    console.log("sorry error " + event.target.errorCode);
-};
-
-function saveRecord(record) {
-    const transaction = db.transaction(["pending"], "readwrite");
-    const store = transaction.objectStore("pending");
-    store.add(record);
+    return;
 }
 
-function checkDatabase() {
-    const transaction = db.transaction(["pending"], "readwrite");
-    const store = transaction.objectStore("pending");
-    const getAll = store.getAll();
-
-    getAll.onsuccess = function () {
-        if (getAll.result.length > 0) {
-            fetch("/api/transaction/bulk", {
-                method: "POST",
-                body: JSON.stringify(getAll.result),
-                headers: {
-                    Accept: "application/json, text/plain, */*",
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => response.json())
-                .then(() => {
-                    ///success pending db 
-                    const transaction = db.transaction(["pending"], "readwrite");
-                    ///pending obj store
-                    const store = transaction.objectStore("pending");
-                    /// clear
-                    store.clear();
-
-                });
-        }
-    }
-}
-return;
 
 
 
