@@ -3,7 +3,7 @@
 
 console.log("Hello from your service worker!");
 const FILES_TO_CACHE = [
-    // '/',
+    '/',
     '/index.html',
     '/style.css',
     '/index.js',
@@ -15,7 +15,7 @@ const FILES_TO_CACHE = [
 const CACHE_NAME = 'static-cache-v1';
 const DATA_CACHE_NAME = 'data-cache-v1';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', function (event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(FILES_TO_CACHE);
