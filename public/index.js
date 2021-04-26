@@ -112,7 +112,7 @@ function sendTransaction(isAdding) {
   populateTable();
   populateTotal();
 
-  // also send to server
+  // also send to server  //changed line 116 was this fetch("/api/transaction", {
   fetch("/api/transaction", {
     method: "POST",
     body: JSON.stringify(transaction),

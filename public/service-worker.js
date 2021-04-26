@@ -3,13 +3,13 @@
 
 console.log("Hello from your service worker!");
 const FILES_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/index.js',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png',
-    '/data.js',
+    // '/',
+    // '/index.html',
+    // '/style.css',
+    // '/index.js',
+    // '/icons/icon-192x192.png',
+    // '/icons/icon-512x512.png',
+    // '/data.js',
 ];
 
 const CACHE_NAME = 'static-cache-v1';
@@ -28,9 +28,9 @@ self.addEventListener('install', function (event) {
 });
 
 // The activate handler takes care of cleaning up old caches.
-self.addEventListener('activate', (event) => {
-    EventTarget.waitUntil(
-        caches.keys().then(keylist => {
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        caches.keys().then(keyList => {
             return Promise.all(
                 keyList.map(key => {
                     if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
@@ -41,7 +41,7 @@ self.addEventListener('activate', (event) => {
             )
         })
     )
-    self.ClientRectList.claim();
+    self.clients.claim();
 
 });
 
@@ -59,7 +59,7 @@ self.addEventListener('fetch', async function (event) {
                 return fetch(event.request)
                     .then(response => {
                         if (response.status === 200) {
-                            cache.put(event.request.jurl, response.clone());
+                            cache.put(event.request.url, response.clone());
                         }
                         return response;
                     })
