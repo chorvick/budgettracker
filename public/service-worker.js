@@ -47,108 +47,59 @@ self.addEventListener('activate', function (event) {
 
 
 /// fetch functionality
-self.addEventListener('fetch', async function (event) {
-    if (event.request.url.includes("/api/")) {
-        if (event.request.method == "GET") {
-            await offlineDB(event.request.method);
-        }
-        console.log(event);
+self.addEventListener('fetch', function (event) {
+    if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    if (event.request.url.includes("/api/transaction")) {
+
         event.respondWith(
+
             caches.open(DATA_CACHE_NAME).then(cache => {
 
                 return fetch(event.request)
+
                     .then(response => {
+
                         if (response.status === 200) {
-                            cache.put(event.request.url, response.clone());
+                            cache.put(event.request, response.clone());
                         }
                         return response;
                     })
-                    .catch(err => {
-                        return cache.match(event.request);
-                    });
-            }).catch(err => console.log(err))
+                    .catch(() => caches.match(event.request));
+            })
+                .catch(err => console.log(err))
         );
         return;
     }
+
     event.respondWith(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.match(event.request).then(response => {
-                return response || fetch(event.request);
-            })
+        caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+
+            return caches.open(DATA_CACHE_NAME).then(cache => {
+
+
+                return fetch(event.request).then(response => {
+
+
+                    return cache.put(event.request, response.clone()).then(() => {
+                        return response;
+                    });
+
+                });
+
+            });
+
         })
-    )
+
+    );
 
 });
-
-
-
-async function offlineDB(record) {
-    let db;
-    const request = indexedDB.open("budget", 1);
-    request.onupgradeneeded = function (event) {
-        const db = event.target.result;
-        db.createObjectStore("pending", {
-            autoIncrement: true
-
-        });
-    };
-
-
-    request.onsuccess = function (event) {
-        db = event.target.result;
-
-        if (navigator.online) {
-            checkDatabase();
-
-        } else {
-            if (record != "GET") {
-                saveRecord(record);
-            }
-        }
-    };
-
-    request.onerror = function (event) {
-        console.log("sorry error " + event.target.errorCode);
-    };
-
-    function saveRecord(record) {
-        const transaction = db.transaction(["pending"], "readwrite");
-        const store = transaction.objectStore("pending");
-        store.add(record);
-    }
-
-    function checkDatabase() {
-        const transaction = db.transaction(["pending"], "readwrite");
-        const store = transaction.objectStore("pending");
-        const getAll = store.getAll();
-
-        getAll.onsuccess = function () {
-            if (getAll.result.length > 0) {
-                fetch("/api/transaction/bulk", {
-                    method: "POST",
-                    body: JSON.stringify(getAll.result),
-                    headers: {
-                        Accept: "application/json, text/plain, */*",
-                        "Content-Type": "application/json"
-                    }
-                })
-                    .then(response => response.json())
-                    .then(() => {
-                        ///success pending db 
-                        const transaction = db.transaction(["pending"], "readwrite");
-                        ///pending obj store
-                        const store = transaction.objectStore("pending");
-                        /// clear
-                        store.clear();
-
-                    });
-            }
-        }
-    }
-    return;
-}
-
-
 
 
 
