@@ -33,10 +33,10 @@ function checkDatabase() {
     const store = transaction.objectStore("pending");
     const getAll = store.getAll();
     getAll.onsuccess = function () {
-        // alert("Successfully loaded ")
+        // alert("Successfully loaded ")          /// note this shows the connection being made
         if (getAll.result.length > 0) {
-            // alert(JSON.stringify(getAll.result))
-            fetch("/api/transaction/bulk", {   /////////////this line seems to be a big problem
+            // alert(JSON.stringify(getAll.result))    /////// this shows our offine inputs of credits and debits  are captured , but this payload is not making it into the database, --- very close to a solution
+            fetch("/api/transaction/bulk", {   /////////////this line seems to be a big problem 
                 method: "POST",
                 body: JSON.stringify(getAll.result),
                 headers: {
@@ -56,6 +56,19 @@ function checkDatabase() {
     }
 
 }
+
+function deletePending() {
+
+    const transaction = db.transaction(["pending"], "readwrite");
+
+    const store = transaction.objectStore("pending");
+
+    store.clear();
+}
+
+
+
+/// app comes back online 
 window.addEventListener("online", checkDatabase);
 
 
