@@ -1,7 +1,3 @@
-
-
-
-console.log("Hello from your service worker!");
 const FILES_TO_CACHE = [
     '/',
     '/index.html',
@@ -9,21 +5,20 @@ const FILES_TO_CACHE = [
     '/index.js',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
-    '/data.js',
+    "/data.js",
+    "/manifest.webmanifest"
 ];
 
-const CACHE_NAME = 'static-cache-v1';
+const CACHE_NAME = 'static-cache-v2';
 const DATA_CACHE_NAME = 'data-cache-v1';
 
 self.addEventListener('install', function (event) {
+    console.log("Ran install step")
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(FILES_TO_CACHE);
         })
     );
-
-
-
     self.skipWaiting();
 });
 
@@ -48,63 +43,38 @@ self.addEventListener('activate', function (event) {
 
 /// fetch functionality
 self.addEventListener('fetch', function (event) {
-    if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) {
-        event.respondWith(fetch(event.request));
-        return;
-    }
+    if (event.request.url.includes('/api/')) {
+        console.log('[Service Worker] Fetch(data)', event.request.url);
+        event.respondWith(caches.open(DATA_CACHE_NAME).then(cache => {
+            console.log(event)
+            return fetch(event.request)
+                .then(response => {
+                    if (response.status === 200) {
+                        cache.put(event.request.url, response.clone());
+                    }
+                    console.log(response)
+                    return response;
+                }).catch(err => {
 
-    if (event.request.url.includes("/api/transaction")) {
-
-        event.respondWith(
-
-            caches.open(DATA_CACHE_NAME).then(cache => {
-
-                return fetch(event.request)
-
-                    .then(response => {
-
-                        if (response.status === 200) {
-                            cache.put(event.request, response.clone());
-                        }
-                        return response;
-                    })
-                    .catch(() => caches.match(event.request));
-            })
-                .catch(err => console.log(err))
-        );
-        return;
-    }
-
-    event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-
-            return caches.open(DATA_CACHE_NAME).then(cache => {
-
-
-                return fetch(event.request).then(response => {
-
-
-                    return cache.put(event.request, response.clone()).then(() => {
-                        return response;
-                    });
-
+                    return cache.match(event.request);
                 });
-
-            });
-
         })
 
+        );
+
+        return;
+    }
+
+
+    event.respondWith(
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then
+                (response => {
+                    return response || fetch(event.request);
+                });
+        })
     );
-
 });
-
-
-
-
-
 
 
 
