@@ -36,7 +36,7 @@ function checkDatabase() {
         // alert("Successfully loaded ")          /// note this shows the connection being made
         if (getAll.result.length > 0) {
             // alert(JSON.stringify(getAll.result))    /////// this shows our offine inputs of credits and debits  are captured , but this payload is not making it into the database, --- very close to a solution
-            fetch("/api/transaction/bulk", {   /////////////this line seems to be a big problem 
+            fetch("/api/transaction/bulk", {   /////////////this line seems to be a big problem  -------- note the iformation is there you can see it in the application tab, go to indexdb then budget then pending and anything you do offline is stored !!!!!!!!!!!!!!!!!   
                 method: "POST",
                 body: JSON.stringify(getAll.result),
                 headers: {
