@@ -7,6 +7,8 @@ See the deployed project on heroku [HERE](https://damp-stream-47572.herokuapp.co
 
 This application allows a user to track income and expenses in a simple interface both on and offline.
 
+Sample Screenshot ![Screenshot_2021-05-01 Budget Tracker](https://user-images.githubusercontent.com/52890172/116791588-64019980-aa89-11eb-9b8a-b6518c8c6034.png)
+
 ## Table of Contents
 
 [Description](#description)
